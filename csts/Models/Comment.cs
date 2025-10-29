@@ -15,11 +15,13 @@ namespace csts.Models
 
         [Required(ErrorMessage = "Give your comment/message here..")]
         public string Message { get; set; } = string.Empty;
-        public DateTime CreateDate { get; set; } = DateTime.UtcNow;
+
+        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime? UpdatedDate { get; set; }
         public bool IsDeleted { get; set; } = false;
 
         // Navigation Properties
-        public Ticket Ticket { get; set; }
-        public User User { get; set; }
+        public Ticket Ticket { get; set; } = null!;  // ✅ no warning
+        public User User { get; set; } = null!;      // ✅ no warning
     }
 }

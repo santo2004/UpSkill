@@ -18,16 +18,19 @@ namespace csts.Models
 
         [Required(ErrorMessage = "Give your password here..")]
         public string PasswordHash { get; set; } = string.Empty;
-        
+
         [Required]
         public UserRole Role { get; set; } = UserRole.Customer;
+
         public bool IsActive { get; set; } = true;
         public bool IsDeleted { get; set; } = false;
+        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime? UpdatedDate { get; set; }
 
-        //Navigation Properties
-        public ICollection<Ticket> CreatedTickets { get; set; }
-        public ICollection<Ticket> AssignedTickets { get; set; }
-        public ICollection<Comment> Comments { get; set; }
+        // Navigation Properties
+        public ICollection<Ticket> CreatedTickets { get; set; } = new List<Ticket>();   // ✅ fixed
+        public ICollection<Ticket> AssignedTickets { get; set; } = new List<Ticket>();  // ✅ fixed
+        public ICollection<Comment> Comments { get; set; } = new List<Comment>();       // ✅ fixed
     }
 
     public enum UserRole

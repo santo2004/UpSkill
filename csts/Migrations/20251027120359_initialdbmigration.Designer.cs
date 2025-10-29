@@ -13,7 +13,7 @@ namespace csts.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     [Migration("20251027120359_initialdbmigration")]
-    partial class initialdbmigration
+    partial class InitialDbMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

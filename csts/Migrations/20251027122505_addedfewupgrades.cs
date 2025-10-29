@@ -5,7 +5,7 @@
 namespace csts.Migrations
 {
     /// <inheritdoc />
-    public partial class addedfewupgrades : Migration
+    public partial class AddedFewUpgrades : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

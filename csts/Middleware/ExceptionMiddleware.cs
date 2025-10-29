@@ -1,42 +1,59 @@
 ﻿using System.Net;
 using System.Text.Json;
+using Serilog;
 
 namespace csts.Middleware
 {
     public class ExceptionMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly ILogger<ExceptionMiddleware> _logger;
 
-        public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger)
+        public ExceptionMiddleware(RequestDelegate next)
         {
             _next = next;
-            _logger = logger;
         }
 
         public async Task InvokeAsync(HttpContext context)
         {
             try
             {
-                await _next(context); // continue request
+                await _next(context);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                await HandleExceptionAsync(context, ex, HttpStatusCode.Unauthorized);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                await HandleExceptionAsync(context, ex, HttpStatusCode.NotFound);
+            }
+            catch (ArgumentException ex)
+            {
+                await HandleExceptionAsync(context, ex, HttpStatusCode.BadRequest);
+            }
+            catch (InvalidOperationException ex)
+            {
+                await HandleExceptionAsync(context, ex, HttpStatusCode.Conflict);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Unhandled exception: {ex.Message}");
-                await HandleExceptionAsync(context, ex);
+                await HandleExceptionAsync(context, ex, HttpStatusCode.InternalServerError);
             }
         }
 
-        private static async Task HandleExceptionAsync(HttpContext context, Exception ex)
+        private static async Task HandleExceptionAsync(HttpContext context, Exception ex, HttpStatusCode statusCode)
         {
             context.Response.ContentType = "application/json";
-            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+            context.Response.StatusCode = (int)statusCode;
+
+            Log.Error(ex, "Error: {Message}", ex.Message);
 
             var response = new
             {
+                status = (int)statusCode,
                 success = false,
-                message = ex.Message,
-                stackTrace = ex.StackTrace
+                error = ex.GetType().Name,
+                message = ex.Message
             };
 
             await context.Response.WriteAsync(JsonSerializer.Serialize(response));

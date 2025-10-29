@@ -22,8 +22,7 @@ namespace csts.Services
             CommentId = c.CommentId,
             Message = c.Message,
             TicketId = c.TicketId,
-            UserName = c.User?.Name ?? "Unknown",
-            CreateDate = c.CreateDate
+            UserName = c.User?.Name ?? "Unknown"
         };
 
         // ✅ Get comments for a specific ticket
@@ -54,7 +53,6 @@ namespace csts.Services
                 Message = dto.Message.Trim(),
                 TicketId = dto.TicketId,
                 UserId = dto.UserId,
-                CreateDate = DateTime.UtcNow,
                 IsDeleted = false
             };
 

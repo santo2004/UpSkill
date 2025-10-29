@@ -4,7 +4,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using csts.Repositories.Interfaces;
-using csts.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace csts.Controllers
 {
@@ -21,36 +21,49 @@ namespace csts.Controllers
             _config = config;
         }
 
+        [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
-            var user = await _userRepo.GetByEmailAsync(dto.Email);
-            if (user == null || user.PasswordHash != dto.Password)
-                return Unauthorized("Invalid credentials");
-
-            var claims = new[]
+            try
             {
-                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, user.Role.ToString())
-            };
+                var user = await _userRepo.GetByEmailAsync(dto.Email);
+                if (user == null || user.PasswordHash != dto.Password)
+                    return Unauthorized(new { status = 401, message = "Invalid email or password" });
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+                if (!user.IsActive)
+                    return Forbid("User account inactive");
 
-            var token = new JwtSecurityToken(
-                issuer: _config["Jwt:Issuer"],
-                audience: _config["Jwt:Audience"],
-                claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(Convert.ToDouble(_config["Jwt:ExpireMinutes"])),
-                signingCredentials: creds
-            );
+                var claims = new[]
+                {
+                    new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+                    new Claim(ClaimTypes.Email, user.Email),
+                    new Claim(ClaimTypes.Role, user.Role.ToString())
+                };
 
-            return Ok(new
+                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
+                var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+                var token = new JwtSecurityToken(
+                    issuer: _config["Jwt:Issuer"],
+                    audience: _config["Jwt:Audience"],
+                    claims: claims,
+                    expires: DateTime.UtcNow.AddMinutes(Convert.ToDouble(_config["Jwt:ExpireMinutes"])),
+                    signingCredentials: creds
+                );
+
+                return Ok(new
+                {
+                    status = 200,
+                    message = "Login successful",
+                    token = new JwtSecurityTokenHandler().WriteToken(token),
+                    expires = DateTime.UtcNow.AddMinutes(Convert.ToDouble(_config["Jwt:ExpireMinutes"]))
+                });
+            }
+            catch (Exception ex)
             {
-                token = new JwtSecurityTokenHandler().WriteToken(token),
-                expires = DateTime.UtcNow.AddMinutes(Convert.ToDouble(_config["Jwt:ExpireMinutes"]))
-            });
+                return StatusCode(500, new { status = 500, message = "Error during login", error = ex.Message });
+            }
         }
     }
 

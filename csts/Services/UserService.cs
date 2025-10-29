@@ -68,6 +68,7 @@ namespace csts.Services
 
             user.Name = dto.Name.Trim();
             user.Email = dto.Email.Trim();
+            user.PasswordHash = dto.PasswordHash;
             user.Role = dto.Role;
             user.IsActive = dto.IsActive;
 

@@ -18,6 +18,6 @@
         public string Message { get; set; } = string.Empty;
         public string UserName { get; set; } = string.Empty;
         public int TicketId { get; set; }
-        public DateTime CreateDate { get; set; }
+        public DateTime CreatedDate { get; set; }
     }
 }

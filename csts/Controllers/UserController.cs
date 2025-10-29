@@ -11,24 +11,42 @@ namespace csts.Controllers
     public class UserController : ControllerBase
     {
         private readonly UserService _userService;
-        public UserController (UserService userService)
+        public UserController(UserService userService)
         {
             _userService = userService;
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<IActionResult> GetAllUsers()
         {
-            var users = await _userService.GetAllUsersAsync();
-            return Ok(users);
+            try
+            {
+                var users = await _userService.GetAllUsersAsync();
+                return Ok(new { status = 200, message = "Users fetched successfully", data = users });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { status = 500, message = "Error fetching users", error = ex.Message });
+            }
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetUserById(int id)
         {
-            var user = await _userService.GetUserByIdAsync(id);
-            if (user == null) return NotFound("No User Found");
-            return Ok(user);
+            try
+            {
+                var user = await _userService.GetUserByIdAsync(id);
+                if (user == null)
+                    return NotFound(new { status = 404, message = "User not found" });
+
+                return Ok(new { status = 200, message = "User fetched successfully", data = user });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { status = 500, message = "Error fetching user", error = ex.Message });
+            }
         }
 
         [AllowAnonymous]
@@ -36,42 +54,51 @@ namespace csts.Controllers
         public async Task<IActionResult> CreateUser([FromBody] UserCreateDto dto)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                return BadRequest(new { status = 400, message = "Invalid user data" });
 
             try
             {
                 var userId = await _userService.AddUserAsync(dto);
                 var createdUser = await _userService.GetUserByIdAsync(userId);
-                return CreatedAtAction(nameof(GetUserById), new { id = userId }, createdUser);
+                return StatusCode(201, new { status = 201, message = "User created successfully", data = createdUser });
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                return StatusCode(500, new { status = 500, message = "Error creating user", error = ex.Message });
             }
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateUser(int id, [FromBody] UserUpdateDto dto)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                return BadRequest(new { status = 400, message = "Invalid data" });
 
-            var existingUser = await _userService.GetUserByIdAsync(id);
-            if (existingUser == null) return NotFound();
-
-            await _userService.UpdateUserAsync(id, dto);
-            return NoContent();
+            try
+            {
+                await _userService.UpdateUserAsync(id, dto);
+                return Ok(new { status = 200, message = "User updated successfully" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { status = 500, message = "Error updating user", error = ex.Message });
+            }
         }
 
-
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {
-            var existingUser = await _userService.GetUserByIdAsync(id);
-            if (existingUser == null) return NotFound();
-
-            await _userService.DeleteUserAsync(id);
-            return NoContent();
+            try
+            {
+                await _userService.DeleteUserAsync(id);
+                return Ok(new { status = 200, message = "User deleted successfully" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { status = 500, message = "Error deleting user", error = ex.Message });
+            }
         }
     }
 }
