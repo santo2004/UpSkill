@@ -29,9 +29,14 @@ namespace csts
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            // ✅ JWT Configuration
+            // ✅ JWT Configuration (Safe with null checks)
             var jwtSection = builder.Configuration.GetSection("Jwt");
-            var key = Encoding.ASCII.GetBytes(jwtSection["Key"]);
+
+            var jwtKey = jwtSection["Key"] ?? throw new InvalidOperationException("JWT Key is missing in configuration");
+            var jwtIssuer = jwtSection["Issuer"] ?? throw new InvalidOperationException("JWT Issuer is missing in configuration");
+            var jwtAudience = jwtSection["Audience"] ?? throw new InvalidOperationException("JWT Audience is missing in configuration");
+
+            var key = Encoding.ASCII.GetBytes(jwtKey);
 
             builder.Services.AddAuthentication(options =>
             {
@@ -46,8 +51,8 @@ namespace csts
                     ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    ValidIssuer = jwtSection["Issuer"],
-                    ValidAudience = jwtSection["Audience"],
+                    ValidIssuer = jwtIssuer,
+                    ValidAudience = jwtAudience,
                     IssuerSigningKey = new SymmetricSecurityKey(key)
                 };
             });
