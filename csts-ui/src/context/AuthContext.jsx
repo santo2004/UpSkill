@@ -1,4 +1,3 @@
-// src/context/AuthContext.jsx
 import { createContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -6,11 +5,11 @@ export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")) || null);
   const [token, setToken] = useState(localStorage.getItem("token") || null);
 
   useEffect(() => {
-    if (token) {
+    if (token && !user) {
       setUser(JSON.parse(localStorage.getItem("user")));
     }
   }, [token]);
