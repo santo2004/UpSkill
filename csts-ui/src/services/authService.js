@@ -1,11 +1,7 @@
+// src/services/authService.js
 import api from "../api/axiosConfig";
 
-export const loginUser = async (credentials) => {
-  const res = await api.post("/Auth/login", credentials);
-  return res.data;
-};
-
-export const registerUser = async (data) => {
-  const res = await api.post("/Auth/register", data);
-  return res.data;
+export const authService = {
+  login: (payload) => api.post("/Auth/login", payload),
+  register: (payload) => api.post("/Auth/register", payload)
 };

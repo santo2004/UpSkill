@@ -1,11 +1,10 @@
+// src/services/userService.js
 import api from "../api/axiosConfig";
 
-export const getAllUsers = async () => {
-  const res = await api.get("/User");
-  return res.data;
-};
-
-export const deleteUser = async (id) => {
-  const res = await api.delete(`/User/${id}`);
-  return res.data;
+export const userService = {
+  getAll: () => api.get("/User"),
+  getById: (id) => api.get(`/User/${id}`),
+  create: (payload) => api.post("/User", payload),
+  update: (id, payload) => api.put(`/User/${id}`, payload),
+  remove: (id) => api.delete(`/User/${id}`)
 };

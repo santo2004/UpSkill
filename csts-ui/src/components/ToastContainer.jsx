@@ -1,16 +1,18 @@
+// src/components/ToastContainer.jsx
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-export default function ToastController() {
+export default function AppToast() {
   return (
     <ToastContainer
       position="top-right"
-      autoClose={2000}
+      autoClose={3000}
       hideProgressBar={false}
       newestOnTop={false}
       closeOnClick
-      pauseOnHover
+      pauseOnFocusLoss
       draggable
+      pauseOnHover
       theme="colored"
     />
   );

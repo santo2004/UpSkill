@@ -1,55 +1,43 @@
+// src/pages/Tickets/TicketList.jsx
 import { useEffect, useState } from "react";
-import { getAllTickets } from "../../services/ticketService";
-import Navbar from "../../components/Navbar";
-import Loader from "../../components/Loader";
+import { ticketService } from "../../services/ticketService";
 import { Link } from "react-router-dom";
+import Loader from "../../components/Loader";
 
 export default function TicketList() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadTickets = async () => {
-      try {
-        const res = await getAllTickets();
-        setTickets(res.data || []);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadTickets();
+    ticketService.getAll()
+      .then(res => setTickets(res.data.data || res.data))
+      .catch(err => console.error(err))
+      .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <Loader text="Loading tickets..." />;
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-      <div className="pt-20 px-8">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-semibold text-gray-800">Tickets</h2>
-          <Link
-            to="/tickets/new"
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            + New Ticket
-          </Link>
-        </div>
-        <div className="bg-white shadow rounded-lg p-4">
-          {tickets.length > 0 ? (
-            tickets.map((t) => (
-              <div key={t.ticketId} className="border-b py-3">
-                <p className="font-semibold text-gray-700">{t.title}</p>
-                <p className="text-sm text-gray-500">{t.status}</p>
+    <div className="p-6">
+      <h3 className="text-xl font-semibold mb-4">Tickets</h3>
+      {loading ? <Loader /> : (
+        <div className="grid gap-4">
+          <Link to="/tickets/new" className="self-start text-blue-600">+ Create Ticket</Link>
+          {tickets.length === 0 && <p>No tickets found.</p>}
+          {tickets.map(t => (
+            <div key={t.ticketId} className="p-4 bg-white rounded shadow">
+              <div className="flex justify-between">
+                <div>
+                  <h4 className="font-bold">{t.title}</h4>
+                  <p className="text-sm text-gray-600">{t.description}</p>
+                  <p className="mt-2 text-xs">Priority: <b>{t.priority}</b> | Status: <b>{t.status}</b></p>
+                </div>
+                <div className="flex flex-col items-end gap-2">
+                  <Link to={`/tickets/${t.ticketId}`} className="text-sm text-blue-600">View</Link>
+                </div>
               </div>
-            ))
-          ) : (
-            <p className="text-gray-500">No tickets available.</p>
-          )}
+            </div>
+          ))}
         </div>
-      </div>
+      )}
     </div>
   );
 }
