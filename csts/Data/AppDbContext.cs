@@ -102,7 +102,7 @@ namespace csts.Data
             modelBuilder.Entity<Comment>().HasQueryFilter(c => !c.IsDeleted);
         }
 
-        // ✅ Auto audit trail update
+        //auto update feature for CreatedDate and UpdatedDate
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             var entries = ChangeTracker.Entries()

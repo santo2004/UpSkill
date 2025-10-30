@@ -20,7 +20,6 @@ namespace csts.Models
 
         [Required(ErrorMessage = "Give your ticket status here..")]
         public TicketStatus Status { get; set; } = TicketStatus.New;
-
         public bool IsDeleted { get; set; } = false;
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedDate { get; set; }
@@ -32,9 +31,9 @@ namespace csts.Models
         public int? AssignedTo { get; set; }
 
         // Navigation Properties
-        public User CreatedByUser { get; set; } = null!;  // ✅ fixed
+        public User CreatedByUser { get; set; } = null!;  
         public User? AssignedToUser { get; set; }
-        public ICollection<Comment> Comments { get; set; } = new List<Comment>(); // ✅ fixed
+        public ICollection<Comment> Comments { get; set; } = new List<Comment>(); 
     }
 
     public enum TicketPriority

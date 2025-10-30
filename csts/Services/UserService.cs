@@ -38,7 +38,6 @@ namespace csts.Services
 
         public async Task<int> AddUserAsync(UserCreateDto dto)
         {
-            //check for duplicate users - email
             if (await _userRepo.EmailExistsAsync(dto.Email))
                 throw new Exception($"User with email '{dto.Email}' already exists");
 
@@ -62,7 +61,6 @@ namespace csts.Services
             var user = await _userRepo.GetByIdAsync(id);
             if (user == null || user.IsDeleted) return;
 
-            // ✅ Check email uniqueness for update too
             if (await _userRepo.EmailExistsAsync(dto.Email, id))
                 throw new Exception($"Email '{dto.Email}' is already used by another user");
 

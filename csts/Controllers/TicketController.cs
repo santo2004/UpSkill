@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using csts.Services;
-using csts.DTOs;
 using csts.Models;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using csts.Repositories.Interfaces;
+using csts.DTOs;
 
 namespace csts.Controllers
 {
@@ -14,7 +14,7 @@ namespace csts.Controllers
     public class TicketController : ControllerBase
     {
         private readonly TicketService _ticketService;
-        private readonly ITicketRepository _ticketRepo; // ✅ Added
+        private readonly ITicketRepository _ticketRepo; 
 
         public TicketController(TicketService ticketService, ITicketRepository ticketRepo)
         {
@@ -46,7 +46,6 @@ namespace csts.Controllers
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
                 var userRole = User.FindFirst(ClaimTypes.Role)!.Value;
 
-                // ✅ Fetch actual ticket entity for ownership validation
                 var ticketEntity = await _ticketRepo.GetByIdAsync(id);
                 if (ticketEntity == null)
                     return NotFound(new { status = 404, message = "Ticket not found" });

@@ -9,7 +9,6 @@ namespace csts.Repositories.Implementations
     {
         public TicketRepository(AppDbContext context) : base(context) { }
 
-        // ✅ Get all active tickets (includes user names)
         public async Task<IEnumerable<Ticket>> GetAllActiveAsync()
         {
             return await _dbSet
@@ -20,7 +19,6 @@ namespace csts.Repositories.Implementations
                 .ToListAsync();
         }
 
-        // ✅ Get all tickets created by a specific user
         public async Task<IEnumerable<Ticket>> GetTicketsByUserAsync(int userId)
         {
             return await _dbSet
@@ -31,7 +29,6 @@ namespace csts.Repositories.Implementations
                 .ToListAsync();
         }
 
-        // ✅ Filter tickets dynamically by status and priority
         public async Task<IEnumerable<Ticket>> FilterTicketsAsync(TicketStatus? status, TicketPriority? priority)
         {
             var query = _dbSet
@@ -49,7 +46,6 @@ namespace csts.Repositories.Implementations
             return await query.AsNoTracking().ToListAsync();
         }
 
-        // ✅ Overridden — loads navigation properties
         public override async Task<Ticket?> GetByIdAsync(int id)
         {
             return await _dbSet
@@ -59,7 +55,6 @@ namespace csts.Repositories.Implementations
                 .FirstOrDefaultAsync(t => t.TicketId == id && !t.IsDeleted);
         }
 
-        // ✅ Check if ticket exists
         public async Task<bool> ExistsAsync(int id)
         {
             return await _dbSet.AnyAsync(t => t.TicketId == id && !t.IsDeleted);

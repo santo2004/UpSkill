@@ -28,9 +28,9 @@ namespace csts.Models
         public DateTime? UpdatedDate { get; set; }
 
         // Navigation Properties
-        public ICollection<Ticket> CreatedTickets { get; set; } = new List<Ticket>();   // ✅ fixed
-        public ICollection<Ticket> AssignedTickets { get; set; } = new List<Ticket>();  // ✅ fixed
-        public ICollection<Comment> Comments { get; set; } = new List<Comment>();       // ✅ fixed
+        public ICollection<Ticket> CreatedTickets { get; set; } = new List<Ticket>();  
+        public ICollection<Ticket> AssignedTickets { get; set; } = new List<Ticket>(); 
+        public ICollection<Comment> Comments { get; set; } = new List<Comment>();      
     }
 
     public enum UserRole

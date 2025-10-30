@@ -35,7 +35,7 @@ namespace csts
 
             try
             {
-                Log.Information("🚀 Starting CSTS API...");
+                Log.Information("...Starting CSTS API...");
 
                 var builder = WebApplication.CreateBuilder(args);
                 builder.Host.UseSerilog();
@@ -121,7 +121,7 @@ namespace csts
             }
             catch (Exception ex)
             {
-                Log.Fatal(ex, "❌ Application startup failed.");
+                Log.Fatal(ex, "...Application startup failed...");
             }
             finally
             {

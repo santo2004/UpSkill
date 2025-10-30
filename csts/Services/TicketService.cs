@@ -27,14 +27,12 @@ namespace csts.Services
             IsDeleted = t.IsDeleted
         };
 
-        // ✅ Get all active tickets
         public async Task<IEnumerable<TicketResponseDto>> GetAllTicketsAsync()
         {
             var tickets = await _ticketRepo.GetAllActiveAsync();
             return tickets.Select(ToTicketResponse);
         }
 
-        // ✅ Get single ticket by ID
         public async Task<TicketResponseDto?> GetTicketByIdAsync(int id)
         {
             var ticket = await _ticketRepo.GetByIdAsync(id);
@@ -43,7 +41,6 @@ namespace csts.Services
             return ToTicketResponse(ticket);
         }
 
-        // ✅ Create new ticket (validation + auto-status)
         public async Task<int> AddTicketAsync(TicketCreateDto dto)
         {
             if (!await _userRepo.ExistsAsync(dto.CreatedBy))
@@ -68,7 +65,6 @@ namespace csts.Services
             return ticket.TicketId;
         }
 
-        // ✅ Update existing ticket
         public async Task UpdateTicketAsync(int id, TicketUpdateDto dto)
         {
             var ticket = await _ticketRepo.GetByIdAsync(id);
@@ -87,21 +83,18 @@ namespace csts.Services
             await _ticketRepo.SaveChangesAsync();
         }
 
-        // ✅ Soft delete
         public async Task DeleteTicketAsync(int id)
         {
             await _ticketRepo.DeleteAsync(id);
             await _ticketRepo.SaveChangesAsync();
         }
 
-        // ✅ Filter (bonus)
         public async Task<IEnumerable<TicketResponseDto>> FilterTicketsAsync(TicketStatus? status, TicketPriority? priority)
         {
             var tickets = await _ticketRepo.FilterTicketsAsync(status, priority);
             return tickets.Select(ToTicketResponse);
         }
 
-        // ✅ Get tickets by specific user
         public async Task<IEnumerable<TicketResponseDto>> GetTicketsByUserAsync(int userId)
         {
             var tickets = await _ticketRepo.GetTicketsByUserAsync(userId);

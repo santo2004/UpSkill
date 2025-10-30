@@ -21,7 +21,7 @@ namespace csts.Models
         public bool IsDeleted { get; set; } = false;
 
         // Navigation Properties
-        public Ticket Ticket { get; set; } = null!;  // ✅ no warning
-        public User User { get; set; } = null!;      // ✅ no warning
+        public Ticket Ticket { get; set; } = null!;  
+        public User User { get; set; } = null!;      
     }
 }

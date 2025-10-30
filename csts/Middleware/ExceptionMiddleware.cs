@@ -19,25 +19,18 @@ namespace csts.Middleware
             {
                 await _next(context);
             }
-            catch (UnauthorizedAccessException ex)
-            {
-                await HandleExceptionAsync(context, ex, HttpStatusCode.Unauthorized);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                await HandleExceptionAsync(context, ex, HttpStatusCode.NotFound);
-            }
-            catch (ArgumentException ex)
-            {
-                await HandleExceptionAsync(context, ex, HttpStatusCode.BadRequest);
-            }
-            catch (InvalidOperationException ex)
-            {
-                await HandleExceptionAsync(context, ex, HttpStatusCode.Conflict);
-            }
             catch (Exception ex)
             {
-                await HandleExceptionAsync(context, ex, HttpStatusCode.InternalServerError);
+                var statusCode = ex switch
+                {
+                    UnauthorizedAccessException => HttpStatusCode.Unauthorized,   // 401
+                    KeyNotFoundException => HttpStatusCode.NotFound,              // 404
+                    ArgumentException => HttpStatusCode.BadRequest,               // 400
+                    InvalidOperationException => HttpStatusCode.Conflict,         // 409
+                    _ => HttpStatusCode.InternalServerError                       // 500
+                };
+
+                await HandleExceptionAsync(context, ex, statusCode);
             }
         }
 
@@ -46,7 +39,7 @@ namespace csts.Middleware
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = (int)statusCode;
 
-            Log.Error(ex, "Error: {Message}", ex.Message);
+            Log.Error(ex, "💥 [{StatusCode}] {Error}: {Message}", (int)statusCode, ex.GetType().Name, ex.Message);
 
             var response = new
             {
@@ -56,7 +49,13 @@ namespace csts.Middleware
                 message = ex.Message
             };
 
-            await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+            var json = JsonSerializer.Serialize(response, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                WriteIndented = false
+            });
+
+            await context.Response.WriteAsync(json);
         }
     }
 }

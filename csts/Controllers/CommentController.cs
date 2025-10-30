@@ -26,7 +26,6 @@ namespace csts.Controllers
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
                 var userRole = User.FindFirst(ClaimTypes.Role)!.Value;
 
-                // Only Admin/Agent or Ticket Owner can view
                 if (userRole == "Customer")
                 {
                     var comments = await _commentService.GetCommentsByUserAsync(userId);

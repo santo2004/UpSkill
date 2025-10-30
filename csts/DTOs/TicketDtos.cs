@@ -7,8 +7,8 @@ namespace csts.DTOs
         public string Title { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public TicketPriority Priority { get; set; } = TicketPriority.Medium;
-        public int CreatedBy { get; set; }          // FK to UserId
-        public int? AssignedTo { get; set; }        // Optional FK to UserId
+        public int CreatedBy { get; set; }         
+        public int? AssignedTo { get; set; }       
     }
 
     public class TicketUpdateDto
@@ -17,7 +17,7 @@ namespace csts.DTOs
         public string Description { get; set; } = string.Empty;
         public TicketPriority Priority { get; set; } = TicketPriority.Medium;
         public TicketStatus Status { get; set; } = TicketStatus.New;
-        public int? AssignedTo { get; set; }        // Can reassign ticket
+        public int? AssignedTo { get; set; }       
         public bool IsDeleted { get; set; } = false;
     }
 

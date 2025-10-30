@@ -25,21 +25,18 @@ namespace csts.Services
             UserName = c.User?.Name ?? "Unknown"
         };
 
-        // ✅ Get comments for a specific ticket
         public async Task<IEnumerable<CommentResponseDto>> GetCommentsByTicketAsync(int ticketId)
         {
             var comments = await _commentRepo.GetCommentsByTicketAsync(ticketId);
             return comments.Select(ToResponse);
         }
 
-        // ✅ Get comments for a specific user
         public async Task<IEnumerable<CommentResponseDto>> GetCommentsByUserAsync(int userId)
         {
             var comments = await _commentRepo.GetCommentsByUserAsync(userId);
             return comments.Select(ToResponse);
         }
 
-        // ✅ Add new comment (validate user & ticket)
         public async Task<CommentResponseDto> AddCommentAsync(CommentCreateDto dto)
         {
             if (!await _ticketRepo.ExistsAsync(dto.TicketId))
@@ -59,12 +56,10 @@ namespace csts.Services
             await _commentRepo.AddAsync(comment);
             await _commentRepo.SaveChangesAsync();
 
-            // reload with username
             var saved = await _commentRepo.GetByIdAsync(comment.CommentId);
             return ToResponse(saved!);
         }
 
-        // ✅ Update comment message
         public async Task UpdateCommentAsync(int id, CommentUpdateDto dto)
         {
             var comment = await _commentRepo.GetByIdAsync(id);
@@ -76,7 +71,6 @@ namespace csts.Services
             await _commentRepo.SaveChangesAsync();
         }
 
-        // ✅ Soft delete
         public async Task DeleteCommentAsync(int id)
         {
             await _commentRepo.DeleteAsync(id);

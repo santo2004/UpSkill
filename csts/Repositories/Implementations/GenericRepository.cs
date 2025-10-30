@@ -15,10 +15,8 @@ namespace csts.Repositories.Implementations
             _dbSet = _context.Set<T>();
         }
 
-        // ✅ Add new entity
         public async Task AddAsync(T entity)
         {
-            // Automatically set CreatedDate (if exists)
             var createdProp = typeof(T).GetProperty("CreatedDate");
             if (createdProp != null)
                 createdProp.SetValue(entity, DateTime.UtcNow);
@@ -26,7 +24,6 @@ namespace csts.Repositories.Implementations
             await _dbSet.AddAsync(entity);
         }
 
-        // ✅ Soft delete (IsDeleted = true) if property exists
         public async Task DeleteAsync(int id)
         {
             var entity = await GetByIdAsync(id);
@@ -43,35 +40,29 @@ namespace csts.Repositories.Implementations
                     _dbSet.Remove(entity);
                 }
 
-                // Automatically set UpdatedDate if exists
                 var updatedProp = typeof(T).GetProperty("UpdatedDate");
                 if (updatedProp != null)
                     updatedProp.SetValue(entity, DateTime.UtcNow);
             }
         }
 
-        // ✅ Get all (read-only)
         public async Task<IEnumerable<T>> GetAllAsync()
         {
             return await _dbSet.AsNoTracking().ToListAsync();
         }
 
-        // ✅ Get by Id
         public virtual async Task<T?> GetByIdAsync(int id)
         {
             return await _dbSet.FindAsync(id);
         }
 
-        // ✅ Save changes
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
         }
 
-        // ✅ Update entity with audit trail
         public async Task UpdateAsync(T entity)
         {
-            // Automatically update UpdatedDate if exists
             var updatedProp = typeof(T).GetProperty("UpdatedDate");
             if (updatedProp != null)
                 updatedProp.SetValue(entity, DateTime.UtcNow);
