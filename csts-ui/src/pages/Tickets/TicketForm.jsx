@@ -1,40 +1,47 @@
-// src/pages/Tickets/TicketForm.jsx
 import { useState, useEffect } from "react";
-import { ticketService } from "../../services/ticketService";
 import { useNavigate, useParams } from "react-router-dom";
+import Navbar from "../../components/Navbar";
 import Loader from "../../components/Loader";
+import { ticketService } from "../../services/ticketService";
+import { toast } from "react-toastify";
 
 export default function TicketForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ title: "", description: "", priority: "Medium", assignedTo: null });
+  const [form, setForm] = useState({ title: "", description: "", priority: "Medium" });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (id) {
       setLoading(true);
-      ticketService.getById(id)
-        .then(res => {
+      ticketService
+        .getById(id)
+        .then((res) => {
           const data = res.data.data || res.data;
-          setForm({ title: data.title, description: data.description, priority: data.priority, assignedTo: data.assignedTo });
+          setForm({ title: data.title, description: data.description, priority: data.priority });
         })
         .catch(console.error)
         .finally(() => setLoading(false));
     }
   }, [id]);
 
-  const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = async e => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      if (id) await ticketService.update(id, form);
-      else await ticketService.create(form);
+      if (id) {
+        await ticketService.update(id, form);
+        toast.success("Ticket updated successfully!");
+      } else {
+        await ticketService.create(form);
+        toast.success("Ticket created successfully!");
+      }
       navigate("/tickets");
     } catch (err) {
       console.error(err);
-      alert("Failed");
+      toast.error("Failed to save ticket");
     } finally {
       setLoading(false);
     }
@@ -43,24 +50,53 @@ export default function TicketForm() {
   if (loading) return <Loader />;
 
   return (
-    <div className="p-6">
-      <h3 className="text-xl mb-4">{id ? "Edit Ticket" : "Create Ticket"}</h3>
-      <form onSubmit={handleSubmit} className="max-w-xl">
-        <label className="block mb-2">Title</label>
-        <input required name="title" value={form.title} onChange={handleChange} className="w-full p-2 mb-3 border rounded" />
+    <div className="min-h-screen bg-gray-50 p-6">
+      <Navbar />
+      <div className="flex justify-center py-12">
+        <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
+          <h3 className="text-2xl font-semibold mb-6 text-center text-gray-800">
+            {id ? "Edit Ticket" : "Create Ticket"}
+          </h3>
+          <form onSubmit={handleSubmit}>
+            <label className="block mb-2 font-medium text-gray-700">Title</label>
+            <input
+              required
+              name="title"
+              value={form.title}
+              onChange={handleChange}
+              className="w-full p-2 mb-4 border rounded focus:ring focus:ring-blue-200"
+            />
 
-        <label className="block mb-2">Description</label>
-        <textarea required name="description" value={form.description} onChange={handleChange} className="w-full p-2 mb-3 border rounded" />
+            <label className="block mb-2 font-medium text-gray-700">Description</label>
+            <textarea
+              required
+              name="description"
+              value={form.description}
+              onChange={handleChange}
+              className="w-full p-2 mb-4 border rounded focus:ring focus:ring-blue-200"
+            />
 
-        <label className="block mb-2">Priority</label>
-        <select name="priority" value={form.priority} onChange={handleChange} className="w-full p-2 mb-3 border rounded">
-          <option>Low</option>
-          <option>Medium</option>
-          <option>High</option>
-        </select>
+            <label className="block mb-2 font-medium text-gray-700">Priority</label>
+            <select
+              name="priority"
+              value={form.priority}
+              onChange={handleChange}
+              className="w-full p-2 mb-6 border rounded focus:ring focus:ring-blue-200"
+            >
+              <option>Low</option>
+              <option>Medium</option>
+              <option>High</option>
+            </select>
 
-        <button type="submit" className="bg-blue-600 text-white py-2 px-4 rounded">{id ? "Update" : "Create"}</button>
-      </form>
+            <button
+              type="submit"
+              className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
+            >
+              {id ? "Update Ticket" : "Create Ticket"}
+            </button>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }

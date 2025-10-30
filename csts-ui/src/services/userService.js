@@ -1,10 +1,10 @@
-// src/services/userService.js
 import api from "../api/axiosConfig";
 
 export const userService = {
-  getAll: () => api.get("/User"),
-  getById: (id) => api.get(`/User/${id}`),
-  create: (payload) => api.post("/User", payload),
-  update: (id, payload) => api.put(`/User/${id}`, payload),
-  remove: (id) => api.delete(`/User/${id}`)
+  getAll: () => api.get("/Users"),
+  getById: (id) => api.get(`/Users/${id}`),
+  updateStatus: (id, isActive) => api.put(`/Users/${id}/status`, isActive, {
+    headers: { "Content-Type": "application/json" }
+  }),
+  remove: (id) => api.delete(`/Users/${id}`)
 };

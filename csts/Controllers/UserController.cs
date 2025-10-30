@@ -8,10 +8,11 @@ namespace csts.Controllers
     [Authorize]
     [Route("api/[controller]")]
     [ApiController]
-    public class UserController : ControllerBase
+    public class UsersController : ControllerBase
     {
         private readonly UserService _userService;
-        public UserController(UserService userService)
+
+        public UsersController(UserService userService)
         {
             _userService = userService;
         }
@@ -49,40 +50,18 @@ namespace csts.Controllers
             }
         }
 
-        //[AllowAnonymous]
-        //[HttpPost]
-        //public async Task<IActionResult> CreateUser([FromBody] UserCreateDto dto)
-        //{
-        //    if (!ModelState.IsValid)
-        //        return BadRequest(new { status = 400, message = "Invalid user data" });
-
-        //    try
-        //    {
-        //        var userId = await _userService.AddUserAsync(dto);
-        //        var createdUser = await _userService.GetUserByIdAsync(userId);
-        //        return StatusCode(201, new { status = 201, message = "User created successfully", data = createdUser });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return StatusCode(500, new { status = 500, message = "Error creating user", error = ex.Message });
-        //    }
-        //}
-
         [Authorize(Roles = "Admin")]
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(int id, [FromBody] UserUpdateDto dto)
+        [HttpPut("{id}/status")]
+        public async Task<IActionResult> UpdateUserStatus(int id, [FromBody] bool isActive)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(new { status = 400, message = "Invalid data" });
-
             try
             {
-                await _userService.UpdateUserAsync(id, dto);
-                return Ok(new { status = 200, message = "User updated successfully" });
+                await _userService.UpdateUserStatusAsync(id, isActive);
+                return Ok(new { status = 200, message = "User status updated successfully" });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { status = 500, message = "Error updating user", error = ex.Message });
+                return StatusCode(500, new { status = 500, message = "Error updating user status", error = ex.Message });
             }
         }
 

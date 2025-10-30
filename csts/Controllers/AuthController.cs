@@ -39,7 +39,7 @@ namespace csts.Controllers
                 {
                     Name = dto.Name.Trim(),
                     Email = dto.Email.Trim(),
-                    PasswordHash = dto.Password, 
+                    PasswordHash = dto.Password,
                     Role = dto.Role,
                     IsActive = true
                 };
@@ -91,12 +91,21 @@ namespace csts.Controllers
                     signingCredentials: creds
                 );
 
+                var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+
                 return Ok(new
                 {
                     status = 200,
                     message = "Login successful",
-                    token = new JwtSecurityTokenHandler().WriteToken(token),
-                    expires = DateTime.UtcNow.AddMinutes(Convert.ToDouble(_config["Jwt:ExpireMinutes"]))
+                    token = tokenString,
+                    expires = DateTime.UtcNow.AddMinutes(Convert.ToDouble(_config["Jwt:ExpireMinutes"])),
+                    user = new
+                    {
+                        user.UserId,
+                        user.Name,
+                        user.Email,
+                        role = user.Role.ToString()
+                    }
                 });
             }
             catch (Exception ex)

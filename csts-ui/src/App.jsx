@@ -1,4 +1,3 @@
-// src/App.jsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import Login from "./pages/Auth/Login";
@@ -25,36 +24,63 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }/>
+            {/* Dashboard */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
 
-            <Route path="/tickets" element={
-              <ProtectedRoute>
-                <TicketList />
-              </ProtectedRoute>
-            }/>
+            {/* Tickets */}
+            <Route
+              path="/tickets"
+              element={
+                <ProtectedRoute>
+                  <TicketList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tickets/new"
+              element={
+                <ProtectedRoute>
+                  <TicketForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tickets/:id"
+              element={
+                <ProtectedRoute>
+                  <TicketDetails />
+                </ProtectedRoute>
+              }
+            />
 
-            <Route path="/tickets/new" element={
-              <ProtectedRoute>
-                <TicketForm />
-              </ProtectedRoute>
-            }/>
+            {/* Users (Admin only) */}
+            <Route
+              path="/users"
+              element={
+                <ProtectedRoute roles={["Admin"]}>
+                  <UserManagement />
+                </ProtectedRoute>
+              }
+            />
 
-            <Route path="/tickets/:id" element={
-              <ProtectedRoute>
-                <TicketDetails />
-              </ProtectedRoute>
-            }/>
+            {/* ✅ Comments (All roles) */}
+            <Route
+              path="/comments"
+              element={
+                <ProtectedRoute roles={["Admin", "Agent", "Customer"]}>
+                  <CommentSection />
+                </ProtectedRoute>
+              }
+            />
 
-            <Route path="/users" element={
-              <ProtectedRoute roles={["Admin"]}>
-                <UserManagement />
-              </ProtectedRoute>
-            }/>
-
+            {/* Error pages */}
             <Route path="/forbidden" element={<Forbidden />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

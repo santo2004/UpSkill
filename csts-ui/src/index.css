@@ -1,3 +1,4 @@
+/* src/index.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -26,4 +27,13 @@ button {
 
 button:hover {
   transform: translateY(-1px);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 230px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
 }

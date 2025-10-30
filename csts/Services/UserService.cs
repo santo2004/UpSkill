@@ -36,40 +36,12 @@ namespace csts.Services
             return ToUserResponse(user);
         }
 
-        public async Task<int> AddUserAsync(UserCreateDto dto)
-        {
-            if (await _userRepo.EmailExistsAsync(dto.Email))
-                throw new Exception($"User with email '{dto.Email}' already exists");
-
-            var user = new User
-            {
-                Name = dto.Name,
-                Email = dto.Email.Trim(),
-                PasswordHash = dto.PasswordHash,
-                Role = dto.Role,
-                IsActive = true
-            };
-
-            await _userRepo.AddAsync(user);
-            await _userRepo.SaveChangesAsync();
-
-            return user.UserId;
-        }
-
-        public async Task UpdateUserAsync(int id, UserUpdateDto dto)
+        public async Task UpdateUserStatusAsync(int id, bool isActive)
         {
             var user = await _userRepo.GetByIdAsync(id);
             if (user == null || user.IsDeleted) return;
 
-            if (await _userRepo.EmailExistsAsync(dto.Email, id))
-                throw new Exception($"Email '{dto.Email}' is already used by another user");
-
-            user.Name = dto.Name.Trim();
-            user.Email = dto.Email.Trim();
-            user.PasswordHash = dto.PasswordHash;
-            user.Role = dto.Role;
-            user.IsActive = dto.IsActive;
-
+            user.IsActive = isActive;
             await _userRepo.UpdateAsync(user);
             await _userRepo.SaveChangesAsync();
         }
