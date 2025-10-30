@@ -4,6 +4,8 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using csts.Repositories.Interfaces;
+using csts.DTOs;
+using csts.Models;
 using Microsoft.AspNetCore.Authorization;
 
 namespace csts.Controllers
@@ -21,6 +23,46 @@ namespace csts.Controllers
             _config = config;
         }
 
+        // ✅ REGISTER USER
+        [AllowAnonymous]
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(new { status = 400, message = "Invalid registration data" });
+
+            try
+            {
+                // check if email already exists
+                if (await _userRepo.EmailExistsAsync(dto.Email))
+                    return Conflict(new { status = 409, message = "Email already registered" });
+
+                var user = new User
+                {
+                    Name = dto.Name.Trim(),
+                    Email = dto.Email.Trim(),
+                    PasswordHash = dto.Password, // 🔒 TODO: Hash before production
+                    Role = dto.Role,
+                    IsActive = true
+                };
+
+                await _userRepo.AddAsync(user);
+                await _userRepo.SaveChangesAsync();
+
+                return StatusCode(201, new
+                {
+                    status = 201,
+                    message = "User registered successfully",
+                    data = new { user.UserId, user.Name, user.Email, user.Role }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { status = 500, message = "Error during registration", error = ex.Message });
+            }
+        }
+
+        // ✅ LOGIN USER
         [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
@@ -65,11 +107,5 @@ namespace csts.Controllers
                 return StatusCode(500, new { status = 500, message = "Error during login", error = ex.Message });
             }
         }
-    }
-
-    public class LoginDto
-    {
-        public string Email { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
     }
 }

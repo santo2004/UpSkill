@@ -49,24 +49,24 @@ namespace csts.Controllers
             }
         }
 
-        [AllowAnonymous]
-        [HttpPost]
-        public async Task<IActionResult> CreateUser([FromBody] UserCreateDto dto)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(new { status = 400, message = "Invalid user data" });
+        //[AllowAnonymous]
+        //[HttpPost]
+        //public async Task<IActionResult> CreateUser([FromBody] UserCreateDto dto)
+        //{
+        //    if (!ModelState.IsValid)
+        //        return BadRequest(new { status = 400, message = "Invalid user data" });
 
-            try
-            {
-                var userId = await _userService.AddUserAsync(dto);
-                var createdUser = await _userService.GetUserByIdAsync(userId);
-                return StatusCode(201, new { status = 201, message = "User created successfully", data = createdUser });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { status = 500, message = "Error creating user", error = ex.Message });
-            }
-        }
+        //    try
+        //    {
+        //        var userId = await _userService.AddUserAsync(dto);
+        //        var createdUser = await _userService.GetUserByIdAsync(userId);
+        //        return StatusCode(201, new { status = 201, message = "User created successfully", data = createdUser });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(500, new { status = 500, message = "Error creating user", error = ex.Message });
+        //    }
+        //}
 
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]

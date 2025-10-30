@@ -10,6 +10,8 @@ using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using Serilog.Events;
 using System.Text;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 namespace csts
 {
@@ -103,6 +105,22 @@ namespace csts
                 builder.Services.AddScoped<ICommentRepository, CommentRepository>();
                 builder.Services.AddScoped<CommentService>();
 
+                builder.Services.AddRateLimiter(options =>
+                {
+                    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+                        RateLimitPartition.GetFixedWindowLimiter(
+                            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "global",
+                            factory: _ => new FixedWindowRateLimiterOptions
+                            {
+                                PermitLimit = 5,              
+                                Window = TimeSpan.FromSeconds(10),
+                                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                                QueueLimit = 0
+                            }));
+
+                    options.RejectionStatusCode = 429; 
+                });
+
                 var app = builder.Build();
 
                 if (app.Environment.IsDevelopment())
@@ -113,6 +131,7 @@ namespace csts
 
                 app.UseSerilogRequestLogging();
                 app.UseMiddleware<ExceptionMiddleware>();
+                app.UseRateLimiter();
                 app.UseHttpsRedirection();
                 app.UseAuthentication();
                 app.UseAuthorization();
