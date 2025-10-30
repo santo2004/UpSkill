@@ -23,7 +23,6 @@ namespace csts.Controllers
             _config = config;
         }
 
-        // ✅ REGISTER USER
         [AllowAnonymous]
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
@@ -33,7 +32,6 @@ namespace csts.Controllers
 
             try
             {
-                // check if email already exists
                 if (await _userRepo.EmailExistsAsync(dto.Email))
                     return Conflict(new { status = 409, message = "Email already registered" });
 
@@ -41,7 +39,7 @@ namespace csts.Controllers
                 {
                     Name = dto.Name.Trim(),
                     Email = dto.Email.Trim(),
-                    PasswordHash = dto.Password, // 🔒 TODO: Hash before production
+                    PasswordHash = dto.Password, 
                     Role = dto.Role,
                     IsActive = true
                 };
@@ -62,7 +60,6 @@ namespace csts.Controllers
             }
         }
 
-        // ✅ LOGIN USER
         [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
