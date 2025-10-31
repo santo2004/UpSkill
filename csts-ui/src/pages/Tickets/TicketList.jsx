@@ -1,3 +1,4 @@
+// src/pages/Tickets/TicketList.jsx
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
@@ -10,39 +11,21 @@ export default function TicketList() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const loadAll = async () => {
+  const load = () => {
     setLoading(true);
-    try {
-      const res = await ticketService.getAll();
-      setTickets(res.data.data || res.data);
-    } catch (err) {
-      // If 403 (customer) -> fetch user's tickets
-      if (err?.response?.status === 403 || err?.response?.status === 401) {
-        try {
-          const user = JSON.parse(localStorage.getItem("user") || "{}");
-          if (user?.UserId || user?.userId || user?.userId === 0) {
-            const id = user.UserId || user.userId || user.userId;
-            const res2 = await ticketService.getByUser(id);
-            setTickets(res2.data.data || res2.data);
-          } else {
-            // if user object doesn't have id, try email lookup or show empty
-            setTickets([]);
-          }
-        } catch (inner) {
-          console.error(inner);
-          setTickets([]);
-        }
-      } else {
+    ticketService
+      .getAll()
+      .then((res) => setTickets(res.data.data || res.data || []))
+      .catch((err) => {
         console.error(err);
         toast.error("Failed to load tickets");
-      }
-    } finally {
-      setLoading(false);
-    }
+      })
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    loadAll();
+    load();
+    // eslint-disable-next-line
   }, []);
 
   const handleDelete = async (id) => {
@@ -51,7 +34,7 @@ export default function TicketList() {
     try {
       await ticketService.remove(id);
       toast.success("Ticket deleted successfully!");
-      loadAll();
+      load();
     } catch (err) {
       toast.error("Failed to delete ticket");
       console.error(err);
@@ -64,7 +47,7 @@ export default function TicketList() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div className="p-8 max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-semibold text-gray-800">Ticket Management</h2>
           <Link
             to="/tickets/new"
@@ -79,7 +62,7 @@ export default function TicketList() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {tickets.map((t) => (
-              <div key={t.ticketId} className="card bg-white p-5 shadow-md hover:shadow-lg transition rounded-lg">
+              <div key={t.ticketId} className="card bg-white p-5 shadow-md hover:shadow-lg transition">
                 <div>
                   <h4 className="text-lg font-bold text-gray-800 mb-2">{t.title}</h4>
                   <p className="text-sm text-gray-600 mb-3 line-clamp-3">{t.description}</p>

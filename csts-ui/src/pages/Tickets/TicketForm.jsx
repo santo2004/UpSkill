@@ -1,15 +1,14 @@
+// src/pages/Tickets/TicketForm.jsx
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import Loader from "../../components/Loader";
 import { ticketService } from "../../services/ticketService";
 import { toast } from "react-toastify";
-import useAuth from "../../hooks/useAuth";
 
 export default function TicketForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [form, setForm] = useState({ title: "", description: "", priority: "Medium" });
   const [loading, setLoading] = useState(false);
 
@@ -20,9 +19,12 @@ export default function TicketForm() {
         .getById(id)
         .then((res) => {
           const data = res.data.data || res.data;
-          setForm({ title: data.title, description: data.description, priority: data.priority });
+          if (data) setForm({ title: data.title || "", description: data.description || "", priority: data.priority || "Medium" });
         })
-        .catch(console.error)
+        .catch((err) => {
+          console.error(err);
+          toast.error("Failed to load ticket");
+        })
         .finally(() => setLoading(false));
     }
   }, [id]);
@@ -34,11 +36,19 @@ export default function TicketForm() {
     setLoading(true);
     try {
       if (id) {
-        await ticketService.update(id, form);
+        // PUT expects a TicketUpdateDto - include fields accordingly
+        await ticketService.update(id, {
+          title: form.title,
+          description: form.description,
+          priority: form.priority
+        });
         toast.success("Ticket updated successfully!");
       } else {
-        // include CreatedBy on server-side via token; still front sends payload
-        await ticketService.create(form);
+        await ticketService.create({
+          title: form.title,
+          description: form.description,
+          priority: form.priority
+        });
         toast.success("Ticket created successfully!");
       }
       navigate("/tickets");

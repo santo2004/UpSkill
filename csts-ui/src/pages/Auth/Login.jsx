@@ -1,3 +1,4 @@
+// src/pages/Auth/Login.jsx
 import { useState, useContext } from "react";
 import api from "../../api/axiosConfig";
 import { AuthContext } from "../../context/AuthContext";
@@ -17,8 +18,8 @@ export default function Login() {
 
     try {
       const res = await api.post("/Auth/login", form);
-
       if (res?.data?.token) {
+        // backend returns res.data.user
         const userData = res.data.user || { email: form.email };
         login(res.data.token, userData);
       } else {
@@ -56,14 +57,17 @@ export default function Login() {
           />
           <button
             disabled={loading}
-            className={`w-full text-white py-2 rounded-lg transition ${
-              loading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
-            }`}
+            className={`w-full text-white py-2 rounded-lg transition ${loading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"}`}
           >
             {loading ? "Logging in..." : "Login"}
           </button>
+
           {error && <p className="text-red-500 text-sm mt-3 text-center">{error}</p>}
         </form>
+
+        <p className="mt-4 text-center text-sm">
+          Don’t have an account? <a href="/register" className="text-blue-600 hover:underline">Register</a>
+        </p>
       </div>
     </div>
   );
