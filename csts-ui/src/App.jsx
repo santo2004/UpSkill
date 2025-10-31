@@ -13,7 +13,6 @@ import Forbidden from "./pages/Errors/Forbidden";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppToast from "./components/ToastContainer";
 import TicketEdit from "./pages/Tickets/TicketEdit";
-import CommentSection from "./pages/Comments/CommentSection";
 
 function App() {
   return (
