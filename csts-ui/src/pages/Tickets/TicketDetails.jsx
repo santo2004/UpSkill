@@ -4,8 +4,8 @@ import Navbar from "../../components/Navbar";
 import Loader from "../../components/Loader";
 import { ticketService } from "../../services/ticketService";
 import { toast } from "react-toastify";
+import CommentSection from "../Comments/CommentSection";
 import useAuth from "../../hooks/useAuth";
-import CommentSection from "../Comments/CommentSection"; // ✅ added
 
 export default function TicketDetails() {
   const { id } = useParams();
@@ -18,7 +18,6 @@ export default function TicketDetails() {
   const [form, setForm] = useState({ status: "", description: "" });
   const editMode = searchParams.get("edit") === "true";
 
-  // ✅ Fetch ticket details
   useEffect(() => {
     setLoading(true);
     ticketService
@@ -26,27 +25,18 @@ export default function TicketDetails() {
       .then((res) => {
         const data = res.data.data || res.data;
         setTicket(data);
-        setForm({ status: data?.status || "", description: data?.description || "" });
-      })
-      .catch((err) => {
-        console.error(err);
-        toast.error("Failed to load ticket");
+        setForm({ status: data.status, description: data.description });
       })
       .finally(() => setLoading(false));
   }, [id]);
 
-  // ✅ Handle ticket update
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      await ticketService.update(id, {
-        status: form.status,
-        description: form.description,
-      });
+      await ticketService.update(id, form);
       toast.success("Ticket updated successfully!");
       navigate("/tickets");
-    } catch (err) {
-      console.error(err);
+    } catch {
       toast.error("Failed to update ticket");
     }
   };
@@ -62,30 +52,22 @@ export default function TicketDetails() {
           Ticket Details
         </h3>
 
-        {/* ✅ View Mode */}
         {!editMode ? (
           <>
-            <p className="mb-2">
-              <b>Title:</b> {ticket.title}
-            </p>
-            <p className="mb-2">
-              <b>Description:</b> {ticket.description}
-            </p>
-            <p className="mb-2">
-              <b>Status:</b> {ticket.status}
-            </p>
-            <p className="mb-2">
-              <b>Priority:</b> {ticket.priority}
-            </p>
+            <p><b>Title:</b> {ticket.title}</p>
+            <p><b>Description:</b> {ticket.description}</p>
+            <p><b>Status:</b> {ticket.status}</p>
+            <p><b>Priority:</b> {ticket.priority}</p>
 
             <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => navigate(`/tickets/${ticket.ticketId}?edit=true`)}
-                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-              >
-                Edit
-              </button>
-
+              {(user.role === "Admin" || user.role === "Agent") && (
+                <button
+                  onClick={() => navigate(`/tickets/${ticket.ticketId}?edit=true`)}
+                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                >
+                  Edit
+                </button>
+              )}
               <button
                 onClick={() => navigate("/tickets")}
                 className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
@@ -95,7 +77,6 @@ export default function TicketDetails() {
             </div>
           </>
         ) : (
-          // ✅ Edit Mode
           <form onSubmit={handleUpdate}>
             <label className="block mb-2 text-gray-700 font-medium">Status</label>
             <select
@@ -111,9 +92,7 @@ export default function TicketDetails() {
               <option>Closed</option>
             </select>
 
-            <label className="block mb-2 text-gray-700 font-medium">
-              Description
-            </label>
+            <label className="block mb-2 text-gray-700 font-medium">Description</label>
             <textarea
               name="description"
               rows="4"
@@ -123,27 +102,20 @@ export default function TicketDetails() {
             />
 
             <div className="flex gap-3">
-              <button
-                type="submit"
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-              >
+              <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
                 Save Changes
               </button>
-              <button
-                type="button"
-                onClick={() => navigate("/tickets")}
-                className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
-              >
+              <button type="button" onClick={() => navigate("/tickets")} className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
                 Cancel
               </button>
             </div>
           </form>
         )}
+      </div>
 
-        {/* ✅ Comment Section */}
-        <div className="mt-6">
-          <CommentSection ticketId={ticket.ticketId} />
-        </div>
+      {/* Embedded comments (no navbar inside) */}
+      <div className="max-w-3xl mx-auto mt-6">
+        <CommentSection ticketId={ticket.ticketId} hideNavbar />
       </div>
     </div>
   );

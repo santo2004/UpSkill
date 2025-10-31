@@ -139,7 +139,7 @@ namespace csts.Controllers
         }
 
         // Delete ticket -> Admin & Agent only (Controller keeps this as Admin/Agent; if you want Admin-only, change the attribute)
-        [Authorize(Roles = "Admin,Agent")]
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTicket(int id)
         {

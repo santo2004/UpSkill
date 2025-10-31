@@ -1,16 +1,34 @@
-// src/pages/Tickets/TicketForm.jsx
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import Loader from "../../components/Loader";
 import { ticketService } from "../../services/ticketService";
+import { userService } from "../../services/userService";
+import useAuth from "../../hooks/useAuth";
 import { toast } from "react-toastify";
 
 export default function TicketForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ title: "", description: "", priority: "Medium" });
+  const { user } = useAuth();
+
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    priority: "Medium",
+    assignedTo: "",
+  });
+  const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (user?.role === "Admin") {
+      userService.getAll().then((res) => {
+        const all = res.data.data || res.data;
+        setAgents(all.filter((u) => u.role === "Agent" && u.isActive));
+      });
+    }
+  }, [user]);
 
   useEffect(() => {
     if (id) {
@@ -19,11 +37,12 @@ export default function TicketForm() {
         .getById(id)
         .then((res) => {
           const data = res.data.data || res.data;
-          if (data) setForm({ title: data.title || "", description: data.description || "", priority: data.priority || "Medium" });
-        })
-        .catch((err) => {
-          console.error(err);
-          toast.error("Failed to load ticket");
+          setForm({
+            title: data.title,
+            description: data.description,
+            priority: data.priority,
+            assignedTo: data.assignedToId || "",
+          });
         })
         .finally(() => setLoading(false));
     }
@@ -35,25 +54,19 @@ export default function TicketForm() {
     e.preventDefault();
     setLoading(true);
     try {
-      if (id) {
-        // PUT expects a TicketUpdateDto - include fields accordingly
-        await ticketService.update(id, {
-          title: form.title,
-          description: form.description,
-          priority: form.priority
-        });
-        toast.success("Ticket updated successfully!");
-      } else {
-        await ticketService.create({
-          title: form.title,
-          description: form.description,
-          priority: form.priority
-        });
-        toast.success("Ticket created successfully!");
-      }
+      const payload = {
+        title: form.title,
+        description: form.description,
+        priority: form.priority,
+        assignedTo: form.assignedTo || null,
+      };
+
+      if (id) await ticketService.update(id, payload);
+      else await ticketService.create(payload);
+
+      toast.success(`Ticket ${id ? "updated" : "created"} successfully!`);
       navigate("/tickets");
     } catch (err) {
-      console.error(err);
       toast.error("Failed to save ticket");
     } finally {
       setLoading(false);
@@ -63,7 +76,7 @@ export default function TicketForm() {
   if (loading) return <Loader />;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div className="flex justify-center py-12">
         <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
@@ -94,12 +107,31 @@ export default function TicketForm() {
               name="priority"
               value={form.priority}
               onChange={handleChange}
-              className="w-full p-2 mb-6 border rounded focus:ring focus:ring-blue-200"
+              className="w-full p-2 mb-6 border rounded"
             >
               <option>Low</option>
               <option>Medium</option>
               <option>High</option>
             </select>
+
+            {user?.role === "Admin" && (
+              <>
+                <label className="block mb-2 font-medium text-gray-700">Assign To Agent</label>
+                <select
+                  name="assignedTo"
+                  value={form.assignedTo}
+                  onChange={handleChange}
+                  className="w-full p-2 mb-6 border rounded"
+                >
+                  <option value="">Unassigned</option>
+                  {agents.map((a) => (
+                    <option key={a.userId} value={a.userId}>
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
+              </>
+            )}
 
             <button
               type="submit"
