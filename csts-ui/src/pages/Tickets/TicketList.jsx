@@ -4,21 +4,32 @@ import Navbar from "../../components/Navbar";
 import Loader from "../../components/Loader";
 import { ticketService } from "../../services/ticketService";
 import { toast } from "react-toastify";
+import useAuth from "../../hooks/useAuth";
 
 export default function TicketList() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const load = () => {
-    ticketService
-      .getAll()
-      .then((res) => setTickets(res.data.data || res.data))
-      .catch((err) => console.error(err))
-      .finally(() => setLoading(false));
+  const load = async () => {
+    try {
+      const res =
+        user?.role === "Admin" || user?.role === "Agent"
+          ? await ticketService.getAll()
+          : await ticketService.getMyTickets();
+      setTickets(res.data.data || res.data);
+    } catch (err) {
+      toast.error("Failed to fetch tickets");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => load(), []);
+  useEffect(() => {
+    load();
+  }, [user]);
 
   const handleDelete = async (id) => {
     const confirmDelete = window.confirm("Are you sure you want to delete this ticket?");
@@ -73,18 +84,22 @@ export default function TicketList() {
                   >
                     View
                   </button>
-                  <button
-                    onClick={() => navigate(`/tickets/${t.ticketId}?edit=true`)}
-                    className="text-green-600 hover:underline text-sm"
-                  >
-                    Update
-                  </button>
-                  <button
-                    onClick={() => handleDelete(t.ticketId)}
-                    className="text-red-600 hover:underline text-sm"
-                  >
-                    Delete
-                  </button>
+                  {(user?.role === "Admin" || user?.role === "Agent") && (
+                    <button
+                      onClick={() => navigate(`/tickets/${t.ticketId}?edit=true`)}
+                      className="text-green-600 hover:underline text-sm"
+                    >
+                      Update
+                    </button>
+                  )}
+                  {user?.role === "Admin" && (
+                    <button
+                      onClick={() => handleDelete(t.ticketId)}
+                      className="text-red-600 hover:underline text-sm"
+                    >
+                      Delete
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

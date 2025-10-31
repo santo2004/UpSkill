@@ -1,9 +1,10 @@
 import api from "../api/axiosConfig";
 
 export const ticketService = {
-  getAll: () => api.get("/Ticket"),
-  getById: (id) => api.get(`/Ticket/${id}`),
-  create: (payload) => api.post("/Ticket", payload),
-  update: (id, payload) => api.put(`/Ticket/${id}`, payload),
-  remove: (id) => api.delete(`/Ticket/${id}`)
+  getAll: () => api.get("/Tickets"),
+  getMyTickets: () => api.get("/Tickets/my"),
+  getById: (id) => api.get(`/Tickets/${id}`),
+  create: (payload) => api.post("/Tickets", payload),
+  update: (id, payload) => api.put(`/Tickets/${id}`, payload),
+  remove: (id) => api.delete(`/Tickets/${id}`)
 };

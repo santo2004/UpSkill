@@ -9,12 +9,12 @@ using csts.DTOs;
 namespace csts.Controllers
 {
     [Authorize]
-    [Route("api/[controller]")]
+    [Route("api/Tickets")]
     [ApiController]
     public class TicketController : ControllerBase
     {
         private readonly TicketService _ticketService;
-        private readonly ITicketRepository _ticketRepo; 
+        private readonly ITicketRepository _ticketRepo;
 
         public TicketController(TicketService ticketService, ITicketRepository ticketRepo)
         {
@@ -22,6 +22,7 @@ namespace csts.Controllers
             _ticketRepo = ticketRepo;
         }
 
+        // ✅ Admin, Agent can view all
         [Authorize(Roles = "Admin,Agent")]
         [HttpGet]
         public async Task<IActionResult> GetAllTickets()
@@ -37,6 +38,24 @@ namespace csts.Controllers
             }
         }
 
+        // ✅ Customer can view only their tickets
+        [Authorize(Roles = "Admin,Agent,Customer")]
+        [HttpGet("my")]
+        public async Task<IActionResult> GetMyTickets()
+        {
+            try
+            {
+                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+                var tickets = await _ticketService.GetTicketsByUserAsync(userId);
+                return Ok(new { status = 200, message = "User tickets fetched", data = tickets });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { status = 500, message = "Error fetching tickets", error = ex.Message });
+            }
+        }
+
+        // ✅ Get single ticket by ID
         [Authorize(Roles = "Admin,Agent,Customer")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTicketById(int id)
@@ -62,6 +81,7 @@ namespace csts.Controllers
             }
         }
 
+        // ✅ Create new ticket (Customer)
         [Authorize(Roles = "Admin,Agent,Customer")]
         [HttpPost]
         public async Task<IActionResult> CreateTicket([FromBody] TicketCreateDto dto)
@@ -83,6 +103,7 @@ namespace csts.Controllers
             }
         }
 
+        // ✅ Update ticket (Admin, Agent)
         [Authorize(Roles = "Admin,Agent")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateTicket(int id, [FromBody] TicketUpdateDto dto)
@@ -101,7 +122,8 @@ namespace csts.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin,Agent")]
+        // ✅ Delete ticket (Admin only)
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTicket(int id)
         {
@@ -113,50 +135,6 @@ namespace csts.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { status = 500, message = "Error deleting ticket", error = ex.Message });
-            }
-        }
-
-        [Authorize(Roles = "Admin,Agent")]
-        [HttpGet("filter")]
-        public async Task<IActionResult> FilterTickets([FromQuery] string? status, [FromQuery] string? priority)
-        {
-            try
-            {
-                TicketStatus? parsedStatus = null;
-                TicketPriority? parsedPriority = null;
-
-                if (Enum.TryParse(status, true, out TicketStatus st))
-                    parsedStatus = st;
-                if (Enum.TryParse(priority, true, out TicketPriority pr))
-                    parsedPriority = pr;
-
-                var tickets = await _ticketService.FilterTicketsAsync(parsedStatus, parsedPriority);
-                return Ok(new { status = 200, message = "Tickets filtered successfully", data = tickets });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { status = 500, message = "Error filtering tickets", error = ex.Message });
-            }
-        }
-
-        [Authorize(Roles = "Admin,Agent,Customer")]
-        [HttpGet("user/{userId}")]
-        public async Task<IActionResult> GetTicketsByUser(int userId)
-        {
-            try
-            {
-                var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-                var currentRole = User.FindFirst(ClaimTypes.Role)!.Value;
-
-                if (currentRole == "Customer" && currentUserId != userId)
-                    return Forbid("You cannot view other users' tickets");
-
-                var tickets = await _ticketService.GetTicketsByUserAsync(userId);
-                return Ok(new { status = 200, message = "Tickets fetched successfully", data = tickets });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { status = 500, message = "Error fetching user's tickets", error = ex.Message });
             }
         }
     }
