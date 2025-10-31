@@ -1,100 +1,86 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
-import { commentService } from "../../services/commentService";
-import { toast } from "react-toastify";
 import Loader from "../../components/Loader";
 import useAuth from "../../hooks/useAuth";
+import { commentService } from "../../services/commentService";
+import { useParams } from "react-router-dom";
+import { toast } from "react-toastify";
 
-export default function CommentSection() {
-  const { ticketId } = useParams();
+export default function CommentSection({ ticketId: propTicketId }) {
   const { user } = useAuth();
-  const navigate = useNavigate();
-
+  const params = useParams();
+  const ticketId = propTicketId || params.id;
   const [comments, setComments] = useState([]);
-  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState("");
 
-  const loadComments = async () => {
+  const load = async () => {
+    setLoading(true);
     try {
       const res = await commentService.getByTicket(ticketId);
       setComments(res.data.data || res.data);
     } catch (err) {
-      toast.error("Failed to fetch comments");
       console.error(err);
+      toast.error("Failed to load comments");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAdd = async (e) => {
+  useEffect(() => {
+    if (ticketId) load();
+    else setLoading(false);
+  }, [ticketId]);
+
+  const addComment = async (e) => {
     e.preventDefault();
-    if (!message.trim()) return toast.warn("Enter a comment");
+    if (!message.trim()) return;
     try {
-      await commentService.add({
-        message,
-        ticketId: parseInt(ticketId),
-        userId: user.userId,
-      });
+      const payload = { ticketId: Number(ticketId), userId: user.UserId || user.userId, message: message.trim() };
+      await commentService.add(payload);
       setMessage("");
-      toast.success("Comment added!");
-      loadComments();
+      load();
+      toast.success("Comment added");
     } catch (err) {
-      toast.error("Failed to add comment");
       console.error(err);
+      toast.error("Failed to add comment");
     }
   };
-
-  useEffect(() => {
-    loadComments();
-  }, [ticketId]);
 
   if (loading) return <Loader />;
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <Navbar />
-      <div className="max-w-3xl mx-auto bg-white shadow-md rounded-lg p-6 mt-10">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-semibold text-gray-800">Comments</h2>
-          <button
-            onClick={() => navigate(`/tickets/${ticketId}`)}
-            className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
-          >
-            ← Back to Ticket
-          </button>
-        </div>
-
-        {comments.length === 0 ? (
-          <p className="text-gray-500 text-center py-4">No comments yet.</p>
+      <div className="max-w-3xl mx-auto mt-10 bg-white p-6 rounded shadow">
+        <h2 className="text-xl font-semibold mb-4">Comments</h2>
+        {!ticketId ? (
+          <p className="text-sm text-gray-600">Open a ticket to view comments here.</p>
         ) : (
-          <div className="space-y-4 mb-6">
-            {comments.map((c) => (
-              <div key={c.commentId} className="border-b pb-3">
-                <div className="flex justify-between items-center">
-                  <p className="font-semibold text-gray-800">{c.userName}</p>
+          <>
+            <div className="space-y-3 mb-4">
+              {comments.map((c) => (
+                <div key={c.commentId} className="p-3 bg-gray-50 rounded">
+                  <div className="text-sm font-semibold">{c.userName}</div>
+                  <div className="text-sm text-gray-700">{c.message}</div>
                 </div>
-                <p className="text-gray-700 mt-1">{c.message}</p>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
 
-        <form onSubmit={handleAdd} className="flex items-center gap-2">
-          <input
-            type="text"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Type a comment..."
-            className="flex-1 p-2 border rounded focus:outline-blue-500"
-          />
-          <button
-            type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Send
-          </button>
-        </form>
+            <form onSubmit={addComment}>
+              <textarea
+                rows="3"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Write a comment..."
+                className="w-full p-2 border rounded mb-3"
+              />
+              <div className="flex justify-end">
+                <button className="bg-blue-600 text-white px-4 py-2 rounded">Add Comment</button>
+              </div>
+            </form>
+          </>
+        )}
       </div>
     </div>
   );

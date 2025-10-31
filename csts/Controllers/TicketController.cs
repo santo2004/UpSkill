@@ -9,7 +9,7 @@ using csts.DTOs;
 namespace csts.Controllers
 {
     [Authorize]
-    [Route("api/Tickets")]
+    [Route("api/[controller]")]
     [ApiController]
     public class TicketController : ControllerBase
     {
@@ -22,7 +22,7 @@ namespace csts.Controllers
             _ticketRepo = ticketRepo;
         }
 
-        // ✅ Admin, Agent can view all
+        // Admin & Agent can list all tickets
         [Authorize(Roles = "Admin,Agent")]
         [HttpGet]
         public async Task<IActionResult> GetAllTickets()
@@ -38,24 +38,7 @@ namespace csts.Controllers
             }
         }
 
-        // ✅ Customer can view only their tickets
-        [Authorize(Roles = "Admin,Agent,Customer")]
-        [HttpGet("my")]
-        public async Task<IActionResult> GetMyTickets()
-        {
-            try
-            {
-                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-                var tickets = await _ticketService.GetTicketsByUserAsync(userId);
-                return Ok(new { status = 200, message = "User tickets fetched", data = tickets });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { status = 500, message = "Error fetching tickets", error = ex.Message });
-            }
-        }
-
-        // ✅ Get single ticket by ID
+        // Everyone (Admin,Agent,Customer) can view an individual ticket, but customers only their own ticket
         [Authorize(Roles = "Admin,Agent,Customer")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTicketById(int id)
@@ -81,7 +64,7 @@ namespace csts.Controllers
             }
         }
 
-        // ✅ Create new ticket (Customer)
+        // Create ticket — any authenticated user (Admin,Agent,Customer)
         [Authorize(Roles = "Admin,Agent,Customer")]
         [HttpPost]
         public async Task<IActionResult> CreateTicket([FromBody] TicketCreateDto dto)
@@ -103,8 +86,9 @@ namespace csts.Controllers
             }
         }
 
-        // ✅ Update ticket (Admin, Agent)
-        [Authorize(Roles = "Admin,Agent")]
+        // Update ticket: Admin & Agent can update everything.
+        // Customer allowed but restricted — they can only set Status = Closed on their own tickets.
+        [Authorize(Roles = "Admin,Agent,Customer")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateTicket(int id, [FromBody] TicketUpdateDto dto)
         {
@@ -113,6 +97,38 @@ namespace csts.Controllers
 
             try
             {
+                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+                var userRole = User.FindFirst(ClaimTypes.Role)!.Value;
+
+                var ticketEntity = await _ticketRepo.GetByIdAsync(id);
+                if (ticketEntity == null)
+                    return NotFound(new { status = 404, message = "Ticket not found" });
+
+                // If requester is a Customer, ensure they own the ticket and only update status to Closed
+                if (userRole == "Customer")
+                {
+                    if (ticketEntity.CreatedBy != userId)
+                        return Forbid("Customers can only modify their own tickets");
+
+                    // customers allowed only to change status to Closed
+                    if (dto.Status != TicketStatus.Closed)
+                        return BadRequest(new { status = 400, message = "Customers can only close tickets" });
+
+                    // construct minimal update DTO
+                    var minimalDto = new TicketUpdateDto
+                    {
+                        Title = ticketEntity.Title,
+                        Description = ticketEntity.Description,
+                        Priority = ticketEntity.Priority,
+                        Status = dto.Status,
+                        AssignedTo = ticketEntity.AssignedTo
+                    };
+
+                    await _ticketService.UpdateTicketAsync(id, minimalDto);
+                    return Ok(new { status = 200, message = "Ticket status updated to Closed" });
+                }
+
+                // Admin/Agent -> full update
                 await _ticketService.UpdateTicketAsync(id, dto);
                 return Ok(new { status = 200, message = "Ticket updated successfully" });
             }
@@ -122,8 +138,8 @@ namespace csts.Controllers
             }
         }
 
-        // ✅ Delete ticket (Admin only)
-        [Authorize(Roles = "Admin")]
+        // Delete ticket -> Admin & Agent only (Controller keeps this as Admin/Agent; if you want Admin-only, change the attribute)
+        [Authorize(Roles = "Admin,Agent")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTicket(int id)
         {
@@ -135,6 +151,52 @@ namespace csts.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { status = 500, message = "Error deleting ticket", error = ex.Message });
+            }
+        }
+
+        // Filter (Admin/Agent)
+        [Authorize(Roles = "Admin,Agent")]
+        [HttpGet("filter")]
+        public async Task<IActionResult> FilterTickets([FromQuery] string? status, [FromQuery] string? priority)
+        {
+            try
+            {
+                TicketStatus? parsedStatus = null;
+                TicketPriority? parsedPriority = null;
+
+                if (Enum.TryParse(status, true, out TicketStatus st))
+                    parsedStatus = st;
+                if (Enum.TryParse(priority, true, out TicketPriority pr))
+                    parsedPriority = pr;
+
+                var tickets = await _ticketService.FilterTicketsAsync(parsedStatus, parsedPriority);
+                return Ok(new { status = 200, message = "Tickets filtered successfully", data = tickets });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { status = 500, message = "Error filtering tickets", error = ex.Message });
+            }
+        }
+
+        // Tickets by user - Admin/Agent/Customer, but customers only their own (ticketService enforces)
+        [Authorize(Roles = "Admin,Agent,Customer")]
+        [HttpGet("user/{userId}")]
+        public async Task<IActionResult> GetTicketsByUser(int userId)
+        {
+            try
+            {
+                var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+                var currentRole = User.FindFirst(ClaimTypes.Role)!.Value;
+
+                if (currentRole == "Customer" && currentUserId != userId)
+                    return Forbid("You cannot view other users' tickets");
+
+                var tickets = await _ticketService.GetTicketsByUserAsync(userId);
+                return Ok(new { status = 200, message = "Tickets fetched successfully", data = tickets });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { status = 500, message = "Error fetching user's tickets", error = ex.Message });
             }
         }
     }

@@ -4,10 +4,12 @@ import Navbar from "../../components/Navbar";
 import Loader from "../../components/Loader";
 import { ticketService } from "../../services/ticketService";
 import { toast } from "react-toastify";
+import useAuth from "../../hooks/useAuth";
 
 export default function TicketForm() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [form, setForm] = useState({ title: "", description: "", priority: "Medium" });
   const [loading, setLoading] = useState(false);
 
@@ -35,6 +37,7 @@ export default function TicketForm() {
         await ticketService.update(id, form);
         toast.success("Ticket updated successfully!");
       } else {
+        // include CreatedBy on server-side via token; still front sends payload
         await ticketService.create(form);
         toast.success("Ticket created successfully!");
       }
@@ -50,7 +53,7 @@ export default function TicketForm() {
   if (loading) return <Loader />;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div className="flex justify-center py-12">
         <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
