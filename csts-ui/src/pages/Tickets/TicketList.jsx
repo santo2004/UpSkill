@@ -6,7 +6,7 @@ import Loader from "../../components/Loader";
 import { ticketService } from "../../services/ticketService";
 import { userService } from "../../services/userService";
 import { toast } from "react-toastify";
-import { useAuth } from "../../context/AuthContext";
+import useAuth from "../../hooks/useAuth"; // ✅ Correct import
 
 export default function TicketList() {
   const [tickets, setTickets] = useState([]);
@@ -15,27 +15,37 @@ export default function TicketList() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  // ✅ Load all tickets based on role
   const loadTickets = async () => {
     try {
       const res = await ticketService.getAll();
       const data = res.data.data || res.data;
-      // Filter tickets for Customer (only theirs)
+
+      // Customers see only their tickets
       if (user.role === "Customer") {
-        setTickets(data.filter((t) => t.createdBy === user.fullName));
+        setTickets(data.filter((t) => t.createdBy === user.name));
       } else {
         setTickets(data);
       }
     } catch (err) {
       console.error(err);
+      toast.error("Failed to load tickets");
     } finally {
       setLoading(false);
     }
   };
 
+  // ✅ Load all agents for admin to assign tickets
   const loadAgents = async () => {
     if (user.role === "Admin") {
-      const res = await userService.getAll();
-      setAgents(res.data.filter((u) => u.role === "Agent"));
+      try {
+        const res = await userService.getAll();
+        const all = res.data.data || res.data;
+        setAgents(all.filter((u) => u.role === "Agent"));
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load agents");
+      }
     }
   };
 
@@ -44,6 +54,7 @@ export default function TicketList() {
     loadAgents();
   }, []);
 
+  // ✅ Delete ticket (Admin only)
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this ticket?")) return;
     try {
@@ -55,13 +66,14 @@ export default function TicketList() {
     }
   };
 
+  // ✅ Assign ticket (Admin only)
   const handleAssign = async (ticketId, agentId) => {
     if (!agentId) {
       toast.error("Please select an agent first");
       return;
     }
     try {
-      await ticketService.assign(ticketId, { agentId });
+      await ticketService.assign(ticketId, { agentId: parseInt(agentId) });
       toast.success("Ticket assigned successfully!");
       loadTickets();
     } catch (err) {
@@ -76,18 +88,22 @@ export default function TicketList() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div className="p-8">
+        {/* Header Section */}
         <div className="flex justify-between items-center mb-8">
-          <h2 className="text-2xl font-semibold text-gray-800">Ticket Management</h2>
-          {user.role === "Customer" && (
-            <Link
-              to="/tickets/new"
-              className="bg-blue-600 text-white px-5 py-2 rounded-lg shadow hover:bg-blue-700 transition"
-            >
-              + Create Ticket
-            </Link>
-          )}
+          <h2 className="text-2xl font-semibold text-gray-800">
+            Ticket Management
+          </h2>
+
+          {/* ✅ Create Ticket Button — visible for all roles */}
+          <Link
+            to="/tickets/new"
+            className="bg-blue-600 text-white px-5 py-2 rounded-lg shadow hover:bg-blue-700 transition"
+          >
+            + Create Ticket
+          </Link>
         </div>
 
+        {/* Ticket List Section */}
         {tickets.length === 0 ? (
           <p className="text-gray-600 text-center mt-10">No tickets found.</p>
         ) : (
@@ -95,13 +111,16 @@ export default function TicketList() {
             {tickets.map((t) => (
               <div
                 key={t.ticketId}
-                className="card bg-white p-5 shadow-md hover:shadow-lg transition"
+                className="card bg-white p-5 shadow-md hover:shadow-lg transition rounded-lg"
               >
+                {/* Ticket Info */}
                 <div>
                   <h4 className="text-lg font-bold text-gray-800 mb-2">
                     {t.title}
                   </h4>
-                  <p className="text-sm text-gray-600 mb-3">{t.description}</p>
+                  <p className="text-sm text-gray-600 mb-3 line-clamp-3">
+                    {t.description}
+                  </p>
                   <p className="text-sm text-gray-500 mb-1">
                     <b>Priority:</b> {t.priority}
                   </p>
@@ -113,6 +132,7 @@ export default function TicketList() {
                   </p>
                 </div>
 
+                {/* Actions */}
                 <div className="flex justify-between items-center mt-4 gap-2">
                   <button
                     onClick={() => navigate(`/tickets/${t.ticketId}`)}
@@ -123,7 +143,9 @@ export default function TicketList() {
 
                   {(user.role === "Agent" || user.role === "Admin") && (
                     <button
-                      onClick={() => navigate(`/tickets/${t.ticketId}?edit=true`)}
+                      onClick={() =>
+                        navigate(`/tickets/${t.ticketId}?edit=true`)
+                      }
                       className="text-green-600 hover:underline text-sm"
                     >
                       Edit
@@ -140,26 +162,23 @@ export default function TicketList() {
                   )}
                 </div>
 
+                {/* Admin Assignment Dropdown */}
                 {user.role === "Admin" && (
                   <div className="flex items-center justify-between mt-3">
                     <select
-                      onChange={(e) => handleAssign(t.ticketId, e.target.value)}
+                      onChange={(e) =>
+                        handleAssign(t.ticketId, e.target.value)
+                      }
                       defaultValue=""
                       className="border rounded p-2 text-sm flex-1"
                     >
                       <option value="">Select Agent</option>
                       {agents.map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.fullName}
+                        <option key={a.userId} value={a.userId}>
+                          {a.name}
                         </option>
                       ))}
                     </select>
-                    <button
-                      onClick={() => handleAssign(t.ticketId, document.querySelector(`[data-ticket='${t.ticketId}']`)?.value)}
-                      className="bg-blue-600 text-white text-sm px-3 py-1 rounded ml-2"
-                    >
-                      Assign
-                    </button>
                   </div>
                 )}
               </div>
