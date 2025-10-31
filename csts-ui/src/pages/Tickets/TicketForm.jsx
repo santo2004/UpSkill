@@ -63,7 +63,7 @@ export default function TicketForm() {
   if (loading) return <Loader />;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 p-6">
       <Navbar />
       <div className="flex justify-center py-12">
         <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">

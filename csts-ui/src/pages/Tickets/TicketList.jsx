@@ -44,7 +44,7 @@ export default function TicketList() {
   if (loading) return <Loader />;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 p-6">
       <Navbar />
       <div className="p-8 max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
