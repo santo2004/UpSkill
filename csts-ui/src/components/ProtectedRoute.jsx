@@ -1,17 +1,16 @@
 // src/components/ProtectedRoute.jsx
-import { useContext } from "react";
 import { Navigate } from "react-router-dom";
-import { AuthContext } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext"; // ✅ use the custom hook
 
 export default function ProtectedRoute({ children, roles }) {
-  const { token, user } = useContext(AuthContext);
+  const { user, token } = useAuth();
 
-  if (!token) return <Navigate to="/login" replace />;
+  if (!token || !user) {
+    return <Navigate to="/login" replace />;
+  }
 
-  if (roles && roles.length > 0) {
-    const userRole = (user?.role || "").toLowerCase();
-    const allowed = roles.map(r => r.toLowerCase()).includes(userRole);
-    if (!allowed) return <Navigate to="/forbidden" replace />;
+  if (roles && !roles.includes(user.role)) {
+    return <Navigate to="/forbidden" replace />;
   }
 
   return children;

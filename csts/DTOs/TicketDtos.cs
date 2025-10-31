@@ -18,7 +18,6 @@ namespace csts.DTOs
         public TicketPriority Priority { get; set; } = TicketPriority.Medium;
         public TicketStatus Status { get; set; } = TicketStatus.New;
         public int? AssignedTo { get; set; }       
-        public bool IsDeleted { get; set; } = false;
     }
 
     public class TicketResponseDto

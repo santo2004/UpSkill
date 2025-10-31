@@ -25,7 +25,7 @@ namespace csts.Controllers
         }
 
         // Admin & Agent can list all tickets
-        [Authorize(Roles = "Admin,Agent")]
+        [Authorize(Roles = "Admin,Agent,Customer")]
         [HttpGet]
         public async Task<IActionResult> GetAllTickets()
         {
@@ -40,7 +40,7 @@ namespace csts.Controllers
             }
         }
 
-        // Everyone (Admin,Agent,Customer) can view an individual ticket
+        // Everyone (Admin,Agent,Customer) can view an individual ticket, but customers only their own ticket
         [Authorize(Roles = "Admin,Agent,Customer")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTicketById(int id)
@@ -66,7 +66,7 @@ namespace csts.Controllers
             }
         }
 
-        // Create ticket — any authenticated user
+        // Create ticket — any authenticated user (Admin,Agent,Customer)
         [Authorize(Roles = "Admin,Agent,Customer")]
         [HttpPost]
         public async Task<IActionResult> CreateTicket([FromBody] TicketCreateDto dto)
@@ -80,7 +80,11 @@ namespace csts.Controllers
                 dto.CreatedBy = userId;
 
                 var ticketId = await _ticketService.AddTicketAsync(dto);
-                return StatusCode(201, new { status = 201, message = "Ticket created successfully", ticketId });
+
+                // return the created ticket as response data (helpful to frontend)
+                var createdTicket = await _ticketService.GetTicketByIdAsync(ticketId);
+
+                return StatusCode(201, new { status = 201, message = "Ticket created successfully", data = createdTicket });
             }
             catch (Exception ex)
             {
@@ -88,7 +92,8 @@ namespace csts.Controllers
             }
         }
 
-        // Update ticket — full update for Admin/Agent, restricted for Customer
+        // Update ticket: Admin & Agent can update everything.
+        // Customer allowed but restricted — they can only set Status = Closed on their own tickets.
         [Authorize(Roles = "Admin,Agent,Customer")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateTicket(int id, [FromBody] TicketUpdateDto dto)
@@ -105,14 +110,17 @@ namespace csts.Controllers
                 if (ticketEntity == null)
                     return NotFound(new { status = 404, message = "Ticket not found" });
 
+                // If requester is a Customer, ensure they own the ticket and only update status to Closed
                 if (userRole == "Customer")
                 {
                     if (ticketEntity.CreatedBy != userId)
                         return Forbid("Customers can only modify their own tickets");
 
+                    // customers allowed only to change status to Closed
                     if (dto.Status != TicketStatus.Closed)
                         return BadRequest(new { status = 400, message = "Customers can only close tickets" });
 
+                    // construct minimal update DTO
                     var minimalDto = new TicketUpdateDto
                     {
                         Title = ticketEntity.Title,
@@ -126,6 +134,7 @@ namespace csts.Controllers
                     return Ok(new { status = 200, message = "Ticket status updated to Closed" });
                 }
 
+                // Admin/Agent -> full update
                 await _ticketService.UpdateTicketAsync(id, dto);
                 return Ok(new { status = 200, message = "Ticket updated successfully" });
             }
@@ -135,7 +144,7 @@ namespace csts.Controllers
             }
         }
 
-        // Delete ticket — Admin only
+        // Delete ticket -> Admin only
         [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTicket(int id)
@@ -151,7 +160,7 @@ namespace csts.Controllers
             }
         }
 
-        // Filter tickets
+        // Filter (Admin/Agent)
         [Authorize(Roles = "Admin,Agent")]
         [HttpGet("filter")]
         public async Task<IActionResult> FilterTickets([FromQuery] string? status, [FromQuery] string? priority)
@@ -175,7 +184,7 @@ namespace csts.Controllers
             }
         }
 
-        // Tickets by user
+        // Tickets by user - Admin/Agent/Customer, but customers only their own
         [Authorize(Roles = "Admin,Agent,Customer")]
         [HttpGet("user/{userId}")]
         public async Task<IActionResult> GetTicketsByUser(int userId)
@@ -197,28 +206,39 @@ namespace csts.Controllers
             }
         }
 
-        // Assign ticket to agent — Admin only
+        // PUT: api/tickets/{id}/assign  (Admin only)
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}/assign")]
         public async Task<IActionResult> AssignTicket(int id, [FromBody] AssignTicketDto dto)
         {
             try
             {
-                var ticket = await _ticketRepo.GetByIdAsync(id);
-                if (ticket == null)
+                if (!await _ticketRepo.ExistsAsync(id))
                     return NotFound(new { status = 404, message = "Ticket not found" });
 
+                if (!await _userRepo.ExistsAsync(dto.AgentId))
+                    return BadRequest(new { status = 400, message = "Agent not found" });
+
                 var agent = await _userRepo.GetByIdAsync(dto.AgentId);
-                if (agent == null || agent.Role.ToString() != "Agent")
-                    return BadRequest(new { status = 400, message = "Invalid agent ID" });
+                if (agent == null)
+                    return BadRequest(new { status = 400, message = "Agent not found" });
 
-                ticket.AssignedTo = agent.UserId;
-                ticket.Status = TicketStatus.Assigned;
+                // ensure the agent actually has Role == Agent (depending on your enum/model)
+                if (agent.Role.ToString() != "Agent")
+                    return BadRequest(new { status = 400, message = "Provided user is not an agent" });
 
-                await _ticketRepo.UpdateAsync(ticket);
-                await _ticketRepo.SaveChangesAsync();
+                var updateDto = new TicketUpdateDto
+                {
+                    Title = (await _ticketRepo.GetByIdAsync(id))!.Title,
+                    Description = (await _ticketRepo.GetByIdAsync(id))!.Description,
+                    Priority = (await _ticketRepo.GetByIdAsync(id))!.Priority,
+                    Status = TicketStatus.Assigned,
+                    AssignedTo = dto.AgentId
+                };
 
-                return Ok(new { status = 200, message = $"Ticket #{id} assigned to {agent.Name}" });
+                await _ticketService.UpdateTicketAsync(id, updateDto);
+
+                return Ok(new { status = 200, message = $"Ticket #{id} assigned to agent {agent.Name}" });
             }
             catch (Exception ex)
             {
